@@ -21,19 +21,16 @@
     <div id="sidebar">
       <!-- <input type="checkbox" id="togglelegend"> Legend<br/> -->
       <!-- <div id="legend" style="visibility: hidden;"></div> -->
-      <div id="display">
-        <label><input class="sizeSelect" type="radio" name="mode" value="count" checked /> Count</label>
-        <br/>
-        <label><input class="sizeSelect"  type="radio" name="mode" value="size" /> Size</label>
-      </div>
       <div id="attribute">
-          <label><input class="attributeSelect" type="radio" name="select" value="age" checked /> Age</label>
-          <br/>
-          <label><input class="attributeSelect"  type="radio" name="select" value="emplotment" /> Emplotment</label>
+          <label for="dropdown">Pick An Attribute</label>
+          <select class="attributeSelect" id="dropdown">
+            <option value="age">Age</option>
+            <option value="employment">Employment</option>
+          </select>
       </div>
+      <div id="sideChart"></div>
     </div>
-    <div id="sideChart">
-    </div>
+    
     <script type="text/javascript" src="sequences.js"></script>
     <script src="https://d3js.org/d3-scale-chromatic.v0.3.js"></script>
     <script type="text/javascript">

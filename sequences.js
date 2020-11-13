@@ -44,7 +44,7 @@ var arc = d3.arc()
  */
 var barChartSvg = d3.select("#sideChart").append("svg").attr("width", 550)
     .attr("height", height + 100),
-    BarMargin = {top: 20, right: 20, bottom: 150, left: 40},
+    BarMargin = {top: 50, right: 20, bottom: 150, left: 40},
     BarWidth = +barChartSvg.attr("width") - BarMargin.left - BarMargin.right,
     BarHeight = +barChartSvg.attr("height") - BarMargin.top - BarMargin.bottom,
     barG = barChartSvg.append("g").attr("transform", "translate(" + BarMargin.left + "," + BarMargin.top + ")");
@@ -67,36 +67,44 @@ d3.text("visit-sequences.csv", function(text) {
   var csv = d3.csvParseRows(text);
   json = buildHierarchy(csv);
   createVisualization(json);
-  barData = constructBarData(csv)
+  barData = constructBarData(csv);
   createBarChart(barData);
 });
 
 d3.text("employment.csv", function(text) {
   var csv = d3.csvParseRows(text);
+  barData2 = constructBarData(csv);
   json2 = buildHierarchy(csv);
 });
 
 
-d3.selectAll(".attributeSelect").on("click", function(d,i) {
+d3.selectAll(".attributeSelect").on("change", function(d,i) {
   // returns the object where the event occurred as keyword "this"
 
   if (this.value == "age") {
       attribute = 'age'
       totalSize = 0; 
       updateVisualization(json);
+      updateBarChart(barData);
   } else {
       attribute = 'emplotment'
       totalSize = 0; 
       updateVisualization(json2);
+      updateBarChart(barData2);
   }
 })
 
+function updateBarChart(barData) {
+  barG.selectAll('g').remove()
+  createBarChart(barData)
+}
+
 function createBarChart(barData) {
 
-  data = barData
+  data = barData.slice().reverse()
   keys = barData['columns']
-  x0.domain(barData.map(function(d) { 
-    return d.Age; 
+  x0.domain(data.map(function(d) { 
+    return d.Attribute; 
   }));
   x1.domain(keys).rangeRound([0, x0.bandwidth()]);
   y.domain([0, d3.max(barData, function(d) { 
@@ -105,12 +113,21 @@ function createBarChart(barData) {
       }); 
     })]).nice();
 
+  barG.append("text")
+    .attr("x", BarWidth / 2)
+    .attr("y", -30)
+    .attr("fill", "#000")
+    .attr("font-weight", "bold")
+    .attr("text-anchor", "middle")
+    .attr("font-size", 12)
+    .text("COMPARISON BETWEEN NON-DISABLED AND SELECTED POPULATIONS");
+    
   barG.append("g")
   .selectAll("g")
   .data(barData)
   .enter().append("g")
   .attr("class","bar")
-  .attr("transform", function(d) { return "translate(" + x0(d.Age) + ",0)"; })
+  .attr("transform", function(d) { return "translate(" + x0(d.Attribute) + ",0)"; })
   .selectAll("rect")
   .data(function(d) { return keys.map(function(key) { return {key: key, value: d[key]}; }); })
   .enter().append("rect")
@@ -427,7 +444,9 @@ function updateBreadcrumbs(nodeArray, percentageString) {
 
   entering.append("polygon")
       .attr("points", breadcrumbPoints)
-      .style("fill", function(d) { return colors[d.data.name]; });
+      .style("fill", function(d) { 
+        return color(d.ancestors().reverse()[1].data.name); 
+      });
 
   entering.append("text")
       .attr("x", (b.w + b.t) / 2)
@@ -443,7 +462,7 @@ function updateBreadcrumbs(nodeArray, percentageString) {
 
   // Now move and update the percentage at the end.
   d3.select("#trail").select("#endlabel")
-      .attr("x", (nodeArray.length + 0.5) * (b.w + b.s))
+      .attr("x", (nodeArray.length + 0.5) * (b.w + b.s) - 70)
       .attr("y", b.h / 2)
       .attr("dy", "0.35em")
       .attr("text-anchor", "middle")
@@ -519,7 +538,7 @@ function constructBarData(csv) {
     for (var val in value){
       for (attr in value[val]) {
         attrVal = value[val][attr]
-        newRow['Age'] = key
+        newRow['Attribute'] = key
         newRow[attr] = attrVal
       }
     }
