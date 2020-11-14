@@ -129,8 +129,9 @@ function createBarChart(barData) {
   .attr("class","bar")
   .attr("transform", function(d) { return "translate(" + x0(d.Attribute) + ",0)"; })
   .selectAll("rect")
-  .data(function(d) { return keys.map(function(key) { return {key: key, value: d[key]}; }); })
+  .data(function(d) { return keys.map(function(key) { return {key: key, value: d[key], id: d.Attribute}; }); })
   .enter().append("rect")
+    .attr("class","barRect")
     .attr("x", function(d) { return x1(d.key); })
     .attr("y", function(d) { return y(d.value || 0); })
     .attr("width", x1.bandwidth())
@@ -377,6 +378,22 @@ function mouseover(d) {
                 return (sequenceArray.indexOf(node) >= 0);
               })
       .style("opacity", 1);
+
+  // Fade all the bar Rectangles.
+  d3.selectAll('.barRect')
+      .style("opacity", 0.3)
+
+  // Then highlight only those that are of the current segment.
+  barChartSvg.selectAll(".barRect")
+      .filter(function(d) {
+          if (sequenceArray.length == 1) {
+            return sequenceArray[0].data.name == d.key
+          } else {
+            var arraylength = sequenceArray.length
+            return sequenceArray[0].data.name == d.key && sequenceArray[arraylength - 1].data.name == d.id
+          }
+        })
+      .style("opacity", 1);
 }
 
 // Restore everything to full opacity when moving off the visualization.
@@ -397,6 +414,11 @@ function mouseleave(d) {
       .on("end", function() {
               d3.select(this).on("mouseover", mouseover);
             });
+  
+  d3.selectAll('.barRect')
+    .transition()
+    .duration(1000)
+    .style("opacity", 1)
 
   d3.select("#explanation")
       .style("visibility", "hidden");
