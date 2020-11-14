@@ -1,7 +1,6 @@
 var width = 750;
 var height = 600;
 var radius = Math.min(width, height) / 2;
-var json, json2, attribute, csv, csv2
 
 // Breadcrumb dimensions: width, height, spacing, width of tip/tail.
 var b = {
@@ -77,6 +76,11 @@ d3.text("employment.csv", function(text) {
   json2 = buildHierarchy(csv);
 });
 
+d3.text("work-experience.csv", function(text) {
+  var csv = d3.csvParseRows(text);
+  barData3 = constructBarData(csv);
+  json3 = buildHierarchy(csv);
+});
 
 d3.selectAll(".attributeSelect").on("change", function(d,i) {
   // returns the object where the event occurred as keyword "this"
@@ -86,12 +90,17 @@ d3.selectAll(".attributeSelect").on("change", function(d,i) {
       totalSize = 0; 
       updateVisualization(json);
       updateBarChart(barData);
-  } else {
-      attribute = 'emplotment'
+  } else if (this.value == "employment"){
+      attribute = 'employment'
       totalSize = 0; 
       updateVisualization(json2);
       updateBarChart(barData2);
-  }
+  } else if (this.value == "work experience"){
+    attribute = 'work experience'
+    totalSize = 0; 
+    updateVisualization(json3);
+    updateBarChart(barData3);
+} 
 })
 
 function updateBarChart(barData) {
@@ -219,19 +228,19 @@ function update(d) {
 
   // Filter out the bands that need to be hidden:
   var bars = barChartSvg.selectAll(".bar").selectAll("rect")
-    .data(function(d) { return keys.map(function(key) { return {key: key, value: d[key]}; }); })
-  
- bars.filter(function(d) {
-       return filtered.indexOf(d.key) > -1;
-    })
-    .transition()
-    .attr("x", function(d) {
-      return (+d3.select(this).attr("x")) + (+d3.select(this).attr("width"))/2;  
-    })
-    .attr("height",0)
-    .attr("width",0)     
-    .attr("y", function(d) { return BarHeight; })
-    .duration(500);
+    .data(function(d) { return keys.map(function(key) { return {key: key, value: d[key], id: d.Attribute}; }); })
+
+  bars.filter(function(d) {
+        return filtered.indexOf(d.key) > -1;
+      })
+      .transition()
+      .attr("x", function(d) {
+        return (+d3.select(this).attr("x")) + (+d3.select(this).attr("width"))/2;  
+      })
+      .attr("height",0)
+      .attr("width",0)     
+      .attr("y", function(d) { return BarHeight; })
+      .duration(500);
     
   // Adjust the remaining bars:
   bars.filter(function(d) {
@@ -244,7 +253,31 @@ function update(d) {
     .attr("width", x1.bandwidth())
     .attr("fill", function(d) { return color(d.key); })
     .duration(500);
-  
+
+  // Gray out corresponding sunburst slices
+  vis.selectAll("path")
+  .filter(function(d) {
+    if (d.ancestors().length > 1){
+      return filtered.indexOf(d.ancestors().reverse()[1].data.name) > -1
+    }
+  })
+  .attr("state", "disabled")
+  .style("opacity", 0.3)
+  .style("fill", "#000")
+  .on("mouseover", null);
+
+  // Restore other slices
+  vis.selectAll("path")
+  .filter(function(d) {
+    if (d.ancestors().length > 1){
+      return filtered.indexOf(d.ancestors().reverse()[1].data.name) == -1
+    }
+  })
+  .attr("state", "")
+  .style("fill", function(d) { return color(d.ancestors().reverse()[1].data.name); })
+  .style("opacity", 1)
+  .on("mouseover", mouseover);
+
   // update legend:
   legend.selectAll("rect")
     .transition()
@@ -269,8 +302,6 @@ function createVisualization(json) {
 
   // Basic setup of page elements.
   initializeBreadcrumbTrail();
-  drawLegend();
-  d3.select("#togglelegend").on("click", toggleLegend);
 
   // Bounding circle underneath the sunburst, to make it easier to detect
   // when the mouse leaves the parent g.
@@ -410,9 +441,17 @@ function mouseleave(d) {
   d3.selectAll("path")
       .transition()
       .duration(1000)
-      .style("opacity", 1)
+      .style("opacity", function() {
+        if (d3.select(this).attr("state") != 'disabled') {
+          return 1
+        } else {
+          return 0.3
+        }
+      })
       .on("end", function() {
-              d3.select(this).on("mouseover", mouseover);
+              if (d3.select(this).attr("state") != 'disabled') {
+                d3.select(this).on("mouseover", mouseover);
+              }
             });
   
   d3.selectAll('.barRect')
@@ -493,49 +532,6 @@ function updateBreadcrumbs(nodeArray, percentageString) {
   // Make the breadcrumb trail visible, if it's hidden.
   d3.select("#trail")
       .style("visibility", "");
-
-}
-
-function drawLegend() {
-
-  // Dimensions of legend item: width, height, spacing, radius of rounded rect.
-  var li = {
-    w: 75, h: 30, s: 3, r: 3
-  };
-
-  var legend = d3.select("#legend").append("svg")
-      .attr("width", li.w)
-      .attr("height", d3.keys(colors).length * (li.h + li.s));
-
-  var g = legend.selectAll("g")
-      .data(d3.entries(colors))
-      .enter().append("g")
-      .attr("transform", function(d, i) {
-              return "translate(0," + i * (li.h + li.s) + ")";
-           });
-
-  g.append("rect")
-      .attr("rx", li.r)
-      .attr("ry", li.r)
-      .attr("width", li.w)
-      .attr("height", li.h)
-      .style("fill", function(d) { return d.value; });
-
-  g.append("text")
-      .attr("x", li.w / 2)
-      .attr("y", li.h / 2)
-      .attr("dy", "0.35em")
-      .attr("text-anchor", "middle")
-      .text(function(d) { return d.key; });
-}
-
-function toggleLegend() {
-  var legend = d3.select("#legend");
-  if (legend.style("visibility") == "hidden") {
-    legend.style("visibility", "");
-  } else {
-    legend.style("visibility", "hidden");
-  }
 }
 
 // Construct data structure needed for bar chart
