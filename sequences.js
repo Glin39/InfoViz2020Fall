@@ -186,13 +186,18 @@ function createBarChart(barData) {
     .attr("fill", color)
     .attr("stroke", color)
     .attr("stroke-width",2)
-    .on("click",function(d) { update(d) });
   
   legend.append("text")
     .attr("x", BarWidth - 24)
     .attr("y", 9.5)
     .attr("dy", "0.32em")
     .text(function(d) { return d; });
+  
+  legend.selectAll("rect")
+    .filter(function(d) {
+      return d != 'No disability'
+    })
+    .on("click",function(d) { update(d) });
 
   filtered = [];
 }
@@ -568,7 +573,8 @@ function constructBarData(csv) {
     "With an ambulatory difficulty",
     "With a cognitive difficulty",
     "With a vision difficulty",
-    "With a hearing difficulty"
+    "With a hearing difficulty",
+    "No disability"
   ]
   
   return newArray
@@ -583,13 +589,15 @@ function buildHierarchy(csv) {
   for (var i = 0; i < csv.length; i++) {
     var sequence = csv[i][0];
     var noSpacesString= sequence.replace(/ /g,'');
-    // console.log(sequence); 
     var size = +csv[i][1];
     if (isNaN(size)) { // e.g. if this is a header row
       continue;
     }
+    // Rule out no disability data in the sunburst (because its propotion is too big)
     var parts = sequence.split("-");
-    // console.log(parts)
+    if (parts[0] == 'No disability') {
+      continue
+    }
     var currentNode = root;
     for (var j = 0; j < parts.length; j++) {
       // console.log(currentNode)
