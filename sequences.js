@@ -110,7 +110,7 @@ function updateBarChart(barData) {
 
 function createBarChart(barData) {
 
-  data = barData.slice().reverse()
+  data = barData
   keys = barData['columns']
   x0.domain(data.map(function(d) { 
     return d.Attribute; 
@@ -424,6 +424,14 @@ function mouseover(d) {
       .filter(function(d) {
           if (sequenceArray.length == 1) {
             return sequenceArray[0].data.name == d.key
+          } else if (sequenceArray.length == 2 && sequenceArray[1].children) {
+            isHighlighted = false
+            if (sequenceArray[1].children.length > 0) {
+              sequenceArray[1].children.forEach(element => {
+                if (element.data.name == d.id) isHighlighted = true
+              })
+            }
+            return sequenceArray[0].data.name == d.key && isHighlighted
           } else {
             var arraylength = sequenceArray.length
             return sequenceArray[0].data.name == d.key && sequenceArray[arraylength - 1].data.name == d.id
