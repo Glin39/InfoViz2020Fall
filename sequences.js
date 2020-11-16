@@ -279,16 +279,14 @@ function createBarChart(barData) {
     .text(function(d) { return d; });
   
   legend.selectAll("rect")
-    // .filter(function(d) {
-    //   return d != 'No disability'
-    // })
     .on("click",function(d) { update(d) });
 
   filtered = [];
 }
 
 function update(d) {  
-   
+
+  clickedArray = [] 
   // add the clicked key if not included:
   if (filtered.indexOf(d) == -1) {
    filtered.push(d); 
@@ -488,7 +486,6 @@ function mouseclick(d) {
 
 function updateMap(filter) {
   col_name = filter;
-  console.log(col_name);
   var colorScale = d3.scaleSequential(d3.interpolateBlues)
                         .domain(d3.extent(window.mapcsv, function(d) { 
                                                             return +d[col_name];
@@ -570,75 +567,75 @@ function mouseover(d) {
       .text(percentageString);
 
   if (clickedArray.length == 0) {
-  var sequenceArray = d.ancestors().reverse();
-  sequenceArray.shift(); // remove root node from the array
-  updateBreadcrumbs(sequenceArray, percentageString);
+    var sequenceArray = d.ancestors().reverse();
+    sequenceArray.shift(); // remove root node from the array
+    updateBreadcrumbs(sequenceArray, percentageString);
 
-  // Fade all the segments.
-  d3.selectAll("path")
-      .style("opacity", 0.3);
+    // Fade all the segments.
+    d3.selectAll("path")
+        .style("opacity", 0.3);
 
-  // Then highlight only those that are an ancestor of the current segment.
-  vis.selectAll("path")
-      .filter(function(node) {
-                return (sequenceArray.indexOf(node) >= 0);
-              })
-      .style("opacity", 1);
-
-  // Fade all the bar Rectangles.
-  d3.selectAll('.barRect')
-      .style("opacity", 0.3)
-
-  // Then highlight only those that are of the current segment.
-  barChartSvg.selectAll(".barRect")
-        .filter(function(d) {
-            if (sequenceArray.length == 1) {
-              return sequenceArray[0].data.name == d.key
-            } else if (sequenceArray.length == 2 && sequenceArray[1].children) {
-              isHighlighted = false
-              if (sequenceArray[1].children.length > 0) {
-                sequenceArray[1].children.forEach(element => {
-                  if (element.data.name == d.id) isHighlighted = true
+    // Then highlight only those that are an ancestor of the current segment.
+    vis.selectAll("path")
+        .filter(function(node) {
+                  return (sequenceArray.indexOf(node) >= 0);
                 })
-              }
-              return sequenceArray[0].data.name == d.key && isHighlighted
-            } else {
-              var arraylength = sequenceArray.length
-              return sequenceArray[0].data.name == d.key && sequenceArray[arraylength - 1].data.name == d.id
-            }
-          })
         .style("opacity", 1);
 
-  if (mapAttribute === "age") {
-    if (sequenceArray.length == 1) {
-      last_piece = sequenceArray[0].data.name;
-     
-    } else {
-      last_piece = sequenceArray[0].data.name + " " + sequenceArray[sequenceArray.length - 1].data.name.replace("Population ", "");
+    // Fade all the bar Rectangles.
+    d3.selectAll('.barRect')
+        .style("opacity", 0.3)
+
+    // Then highlight only those that are of the current segment.
+    barChartSvg.selectAll(".barRect")
+          .filter(function(d) {
+              if (sequenceArray.length == 1) {
+                return sequenceArray[0].data.name == d.key
+              } else if (sequenceArray.length == 2 && sequenceArray[1].children) {
+                isHighlighted = false
+                if (sequenceArray[1].children.length > 0) {
+                  sequenceArray[1].children.forEach(element => {
+                    if (element.data.name == d.id) isHighlighted = true
+                  })
+                }
+                return sequenceArray[0].data.name == d.key && isHighlighted
+              } else {
+                var arraylength = sequenceArray.length
+                return sequenceArray[0].data.name == d.key && sequenceArray[arraylength - 1].data.name == d.id
+              }
+            })
+          .style("opacity", 1);
+
+    if (mapAttribute === "age") {
+      if (sequenceArray.length == 1) {
+        last_piece = sequenceArray[0].data.name;
+      
+      } else {
+        last_piece = sequenceArray[0].data.name + " " + sequenceArray[sequenceArray.length - 1].data.name.replace("Population ", "");
+      }
+    } else if (mapAttribute === "employment") {
+      if (sequenceArray.length == 1) {
+        last_piece = sequenceArray[0].data.name;
+      } else {
+        var colString = "";
+        sequenceArray.forEach(function(item, index) {
+          if (index === 0) {
+            colString += item.data.name;
+          } else {
+            colString = colString + " " + item.data.name;
+          }
+        })
+        last_piece = colString;
+      }
+    } else if (mapAttribute === "work experience")
+    {
+      if (sequenceArray.length == 1) {
+        last_piece = sequenceArray[0].data.name;
+      } else {
+        last_piece = sequenceArray[0].data.name + " " + sequenceArray[sequenceArray.length - 1].data.name.replace(", year round", "")
+      }
     }
-  } else if (mapAttribute === "employment") {
-    if (sequenceArray.length == 1) {
-      last_piece = sequenceArray[0].data.name;
-    } else {
-      var colString = "";
-      sequenceArray.forEach(function(item, index) {
-        if (index === 0) {
-          colString += item.data.name;
-        } else {
-          colString = colString + " " + item.data.name;
-        }
-      })
-      last_piece = colString;
-    }
-  } else if (mapAttribute === "work experience")
-  {
-    if (sequenceArray.length == 1) {
-      last_piece = sequenceArray[0].data.name;
-    } else {
-      last_piece = sequenceArray[0].data.name + " " + sequenceArray[sequenceArray.length - 1].data.name.replace(", year round", "")
-    }
-  }
-  updateMap(last_piece);
+    updateMap(last_piece);
   }
 }
 
@@ -646,7 +643,7 @@ function mouseover(d) {
 function mouseleave(d) {
 
   if (clickedArray.length == 0) {
-    
+
   // Hide the breadcrumb trail
   d3.select("#trail")
   .style("visibility", "hidden");
@@ -679,6 +676,7 @@ function mouseleave(d) {
 //  d3.select("#explanation"    .style("visibility", "hidden") 
   updateMap("Estimated Percent")
   }
+
 }
 
 function initializeBreadcrumbTrail() {
@@ -847,8 +845,6 @@ function buildHierarchy(csv) {
 function mousehover(d) {
   var x, y, k;
 
-  console.log("path centroid", path.centroid(d));
-
   if (d && centered !== d) {
     var centroid = path.centroid(d);
     x = centroid[0];
@@ -876,7 +872,6 @@ function mousehover(d) {
         }
    
   } else {
-    console.log("Original:centered function");
     x = width / 2;
     y = height / 2;
     k = 1;
