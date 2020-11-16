@@ -106,91 +106,68 @@ var map = mapsvg.append("g")
 var div = d3.select("#map").append("div").attr("class","tooltip").style("opacity", 0);
 
 //Load Disabled Data and bind it with the map
-d3.csv("percent_each.csv", function(data) {
-    disabled = data;
-    colorScale = d3.scaleSequential(d3.interpolateBlues)
-              .domain(d3.extent(disabled, function(d) { 
-                                             	return +d["Estimated Percent"];
-                                                  }));
-
-
-  d3.json("us-states.json", function(json) {
-
-    originalJson = json
-    geoJson = json
-    //Merge the ag. data and GeoJSON
-    //Loop through once for each ag. data value
-    for (var i = 0; i < disabled.length; i++) {
-  
-      //Grab state name
-      var dataState = data[i]["Geographic area name"];
-      
-      //Grab data value, and convert from string to float
-      var dataValue = parseFloat(data[i]["Estimated Percent"]);
-      
-      //Find the corresponding state inside the GeoJSON
-      for (var j = 0; j < geoJson.features.length; j++) {
-      
-        var jsonState = geoJson.features[j].properties.name;
-  
-        if (dataState == jsonState) {
-      
-          //Copy the data value into the JSON
-          geoJson.features[j].properties.value = dataValue;
-          
-          //Stop looking through the JSON
-          break;
-          
-        }
-      }   
-    }
-
-    //Bind data and create one path per GeoJSON feature
-    map.append("g")
-        .attr("id", "states")
-        .selectAll("path")
-        .data(geoJson.features)
-        .enter()
-        .append("path")
-        .attr("d", path)
-        .on("mouseover", mousehover)
-        .on("mouseout", mouseout)
-        .style("stroke", "black")
-        .style("stroke-width", "1")
-        .style("fill", function(d) {
-          //Get data value
-          var value = d.properties.value;
-          if (value) {
-            //If value exists…
-            return colorScale(value);
-          } else {
-            //If value is undefined…
-            return "#ccc";
-          }
-       });
-  });
+var employment;
+var disabled;
+var experience;
+var mapAttribute = 'age';
+// var mapcsv; 
+d3.csv("percent_each.csv", function(data) { //Load age data
+  disabled = data;
+  window.mapcsv = disabled;
+  //default
+  updateMap("Estimated Percent")
 });
+
 
 d3.selectAll(".attributeSelect").on("change", function(d,i) {
   // returns the object where the event occurred as keyword "this"
 
   if (this.value == "age") {
-      attribute = 'age'
+      mapAttribute = 'age'
       totalSize = 0; 
+      updateMapAttribute(mapAttribute);
       updateVisualization(json);
       updateBarChart(barData);
   } else if (this.value == "employment"){
-      attribute = 'employment'
+      mapAttribute = 'employment'
       totalSize = 0; 
+      updateMapAttribute(mapAttribute);
       updateVisualization(json2);
       updateBarChart(barData2);
   } else if (this.value == "work experience"){
-    attribute = 'work experience'
+    mapAttribute = 'work experience'
     totalSize = 0; 
+    updateMapAttribute(mapAttribute);
     updateVisualization(json3);
     updateBarChart(barData3);
 } 
 })
+
+//// Functions ///////
+function updateMapAttribute(filter) {
+    if (filter === "age") {
+      console.log("age")
+      d3.csv("percent_each.csv", function(data) { //Load age data
+        disabled = data;
+        window.mapcsv = disabled;
+      });
+    } else if (filter === "employment") {
+      console.log("employment")
+      d3.csv("employment_percent.csv", function(data) { //Load age data
+        employment = data;
+        window.mapcsv = employment;
+      });
+    } else if (filter === "work experience") {
+      console.log("work experience")
+      d3.csv("work_experience_percent.csv", function(data) { //Load age data
+        experience = data;
+        window.mapcsv = experience;
+      });
+    }
+    // console.log(filter)
+    // console.log(window.mapcsv[0])
+    updateMap("Estimated Percent");
+}
 
 function updateBarChart(barData) {
   barG.selectAll('g').remove()
@@ -549,53 +526,91 @@ function mouseover(d) {
           })
         .style("opacity", 1);
   
+    if (mapAttribute === "age") {
     if (sequenceArray.length == 1) {
       updateMap(sequenceArray[0].data.name)
     } else {
-      updateMap(sequenceArray[0].data.name + sequenceArray[sequenceArray.length - 1].data.name.replace("Population", ""))
+      updateMap(sequenceArray[0].data.name + " " + sequenceArray[sequenceArray.length - 1].data.name.replace("Population ", ""))
     }
+  } else if (mapAttribute === "employment") {
+    if (sequenceArray.length == 1) {
+      updateMap(sequenceArray[0].data.name)
+    } else {
+      var colString = ""
+      sequenceArray.forEach(function(item, index) {
+        if (index === 0) {
+          colString += item.data.name
+        } else {
+          colString = colString + " " + item.data.name
+        }
+      })
+      updateMap(colString)
+    }
+  } else if (mapAttribute === "work experience")
+  {
+    if (sequenceArray.length == 1) {
+      updateMap(sequenceArray[0].data.name)
+    } else {
+      updateMap(sequenceArray[0].data.name + " " + sequenceArray[sequenceArray.length - 1].data.name.replace(", year round", ""))
+    }
+  }
 
   }
 }
 
 function updateMap(filter) {
   col_name = filter;
-  colorScale = d3.scaleSequential(d3.interpolateBlues)
-                        .domain(d3.extent(disabled, function(d) { return +d[col_name];}));
+  console.log(col_name);
+  console.log(window.mapcsv[0])
+  var colorScale = d3.scaleSequential(d3.interpolateBlues)
+                        .domain(d3.extent(window.mapcsv, function(d) { 
+                                                            return +d[col_name];
+                                                            }));
+    d3.json("us-states.json", function(error, json) {
+    if (error) throw error;
     //Merge the ag. data and GeoJSON
     //Loop through once for each ag. data value
-    geoJson = originalJson
-    for (var i = 0; i < disabled.length; i++) {
+    for (var i = 0; i < window.mapcsv.length; i++) {
+  
       //Grab state name
-      var dataState = disabled[i]["Geographic area name"];
+      var dataState = window.mapcsv[i]["Geographic area name"];
+      
       //Grab data value, and convert from string to float
-      var dataValue = parseFloat(disabled[i][col_name]);
+      var dataValue = parseFloat(window.mapcsv[i][col_name]);
+      // console.log(window.mapcsv[i])
+      // console.log(dataState + ":" + window.mapcsv[i][col_name])
+      
       //Find the corresponding state inside the GeoJSON
-      for (var j = 0; j < geoJson.features.length; j++) {
-        var jsonState = geoJson.features[j].properties.name;
+      for (var j = 0; j < json.features.length; j++) {
+      
+        var jsonState = json.features[j].properties.name;
+  
         if (dataState == jsonState) {
+      
           //Copy the data value into the JSON
-          geoJson.features[j].properties.value = dataValue;
+          json.features[j].properties.value = dataValue;
+          
           //Stop looking through the JSON
           break;
+          
         }
-      }
+      }   
+
     }
     //Bind data and create one path per GeoJSON feature
     map.append("g")
         .attr("id", "states")
         .selectAll("path")
-        .data(geoJson.features)
+        .data(json.features)
         .enter()
         .append("path")
         .attr("d", path)
-        .on("mouseover", mousehover)
-        .on("mouseout", mouseout)
         .style("stroke", "black")
         .style("stroke-width", "1")
         .style("fill", function(d) {
           //Get data value
           var value = d.properties.value;
+          
           if (value) {
             //If value exists…
             return colorScale(value);
@@ -604,6 +619,7 @@ function updateMap(filter) {
             return "#ccc";
           }
        });
+  });
 }
 
 // Restore everything to full opacity when moving off the visualization.
