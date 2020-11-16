@@ -16,6 +16,7 @@ body {
 #sidebar {
   float: left;
   width: 100px;
+  height: 50px;
 }
 
 #sequence {
@@ -33,11 +34,13 @@ body {
 }
 
 #chart {
-  position: relative;
+  position: absolute;
+  z-index: 0;
 }
 
 #chart path {
   stroke: #fff;
+  z-index: 0;
 }
 
 #explanation {
@@ -64,9 +67,19 @@ body {
 }
 
 #sideChart {
+  position: absolute;
   float: left;
-  width: 550px;
-  height: 800px
+  width: 800px;
+  height: 400px;
+  z-index: 0;
+}
+#map {
+  position: absolute;
+  top:240px;
+  width: 550;
+  height: 175px;
+  border: none;
+  margin-left: 267px;
 }
 
 select {
@@ -74,32 +87,21 @@ select {
   padding: 5px;
   text-align-last: center;
 }
-
-#map {
-  position: absolute;
-  top: 200px;
-  left: 250px;
-  width: 250px;
-  height: 200px;
-  border: none;
-}
-
-/* #usamap {
-  position: absolute;
-  width: 250px;
-  height: 200px;
-  border: none;
-} */
+/*Jim's Setup*/
+/* On mouse hover, lighten state color */
+/*path:hover {
+  fill-opacity: .8;
+}*/
 
 div.tooltip { 
-  position: absolute;     
-  text-align: center;     
-  width: auto;          
-  height: auto;         
-  padding: 2px;       
-  font: 12px sans-serif;    
-  background: #D3D3D3; 
-  border: 0px;    
-  border-radius: 12px;     
-  pointer-events: none;     
+    position: absolute;     
+    text-align: center;     
+    width: auto;          
+    height: auto;         
+    padding: 2px;       
+    font: 12px sans-serif;    
+    background: #D3D3D3; 
+    border: 0px;    
+    border-radius: 12px;     
+    pointer-events: none;     
 }
