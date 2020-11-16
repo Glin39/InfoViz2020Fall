@@ -1,37 +1,25 @@
-var width = 800;
-var height = 650;
+var width = 750;
+var height = 600;
 var radius = Math.min(width, height) / 2;
-var centered; // for zoom-in and out map
+var clickedArray = []
+var centered;
+
 // Breadcrumb dimensions: width, height, spacing, width of tip/tail.
 var b = {
   w: 215, h: 30, s: 3, t: 10
 };
 
-// Mapping of step names to colors.
-// var colors = {
-//   "home": "#5687d1",
-//   "product": "#7b615c",
-//   "search": "#de783b",
-//   "account": "#6ab975",
-//   "other": "#a173d1",
-//   "end": "#bbbbbb"
-// };
-
 var color = d3.scaleOrdinal(d3.schemeCategory20);
-//var color = d3.scaleOrdinal(d3.schemeCategory10);
-//change array for colors
-
 
 // Total size of all segments; we set this later, after loading the data.
 var totalSize = 0; 
 
-var vis = d3.select("#chart")
-              .append("svg")
-              .attr("width", width)
-              .attr("height", height)
-              .append("g")
-              .attr("id", "container")
-              .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+var vis = d3.select("#chart").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .append("g")
+    .attr("id", "container")
+    .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
 
 var partition = d3.partition()
     .size([2 * Math.PI, radius * radius]);
@@ -45,8 +33,9 @@ var arc = d3.arc()
 /*
  *  Variables for the bar chart
  */
-var barChartSvg = d3.select("#sideChart").append("svg").attr("width", 650).attr("height", 600),
-    BarMargin = {top: 50, right: 0, bottom: 150, left: 80},
+var barChartSvg = d3.select("#sideChart").append("svg").attr("width", 550)
+    .attr("height", height + 100),
+    BarMargin = {top: 50, right: 20, bottom: 150, left: 40},
     BarWidth = +barChartSvg.attr("width") - BarMargin.left - BarMargin.right,
     BarHeight = +barChartSvg.attr("height") - BarMargin.top - BarMargin.bottom,
     barG = barChartSvg.append("g").attr("transform", "translate(" + BarMargin.left + "," + BarMargin.top + ")");
@@ -61,7 +50,7 @@ var x1 = d3.scaleBand()
     .padding(0.05);
 
 var y = d3.scaleLinear()
-    .rangeRound([BarHeight, 0]); 
+    .rangeRound([BarHeight, 0]);
 
 // Use d3.text and d3.csvParseRows so that we do not need to have a header
 // row, and can receive the csv as an array of arrays.
@@ -85,11 +74,10 @@ d3.text("work-experience.csv", function(text) {
   json3 = buildHierarchy(csv);
 });
 
-//////// Jim's map
 //Define map projection
 var projection = d3.geoAlbersUsa()
-             .translate([140, 85])
-             .scale([380]);
+             .translate([405, 105])
+             .scale([330]);
 
 //Define path generator
 var path = d3.geoPath().projection(projection);
@@ -97,92 +85,112 @@ var path = d3.geoPath().projection(projection);
 //Create a new, invisible background rect to catch zoom events
 var mapsvg = d3.select("#map")
       .append("svg")
-      .attr("width", 280)
-      .attr("height", 175);
+      .attr("width", 250)
+      .attr("height", 200);
 
 mapsvg.append("rect")
     .attr("class", "background")
     .attr("x", 0)
     .attr("y", 0)
-    .attr("width", 280)
-    .attr("height", 175)
+    .attr("width", 250)
+    .attr("height", 200)
     .style("fill", "none")
     .attr("opacity", 0.6);
 
 //Create a container in which all zoom-able elements will live
 var map = mapsvg.append("g")
-              .attr("id", "map");
+              .attr("id", "usamap")
+              .attr("transform", "translate(" + -280 + "," + 0 + ")");
+              
 // tooltip for state
 var div = d3.select("#map").append("div").attr("class","tooltip").style("opacity", 0);
 
-//Load All Disabled Data
-var employment;
-var disabled;
-var experience;
-var mapAttribute = 'age';
-// var mapcsv; 
-d3.csv("percent_each.csv", function(data) { //Load age data
-  disabled = data;
-  window.mapcsv = disabled;
-  //default
-  updateMap("Estimated Percent")
+//Load Disabled Data and bind it with the map
+d3.csv("percent_each.csv", function(data) {
+    disabled = data;
+    colorScale = d3.scaleSequential(d3.interpolateBlues)
+              .domain(d3.extent(disabled, function(d) { 
+                                             	return +d["Estimated Percent"];
+                                                  }));
+
+
+  d3.json("us-states.json", function(json) {
+
+    originalJson = json
+    geoJson = json
+    //Merge the ag. data and GeoJSON
+    //Loop through once for each ag. data value
+    for (var i = 0; i < disabled.length; i++) {
+  
+      //Grab state name
+      var dataState = data[i]["Geographic area name"];
+      
+      //Grab data value, and convert from string to float
+      var dataValue = parseFloat(data[i]["Estimated Percent"]);
+      
+      //Find the corresponding state inside the GeoJSON
+      for (var j = 0; j < geoJson.features.length; j++) {
+      
+        var jsonState = geoJson.features[j].properties.name;
+  
+        if (dataState == jsonState) {
+      
+          //Copy the data value into the JSON
+          geoJson.features[j].properties.value = dataValue;
+          
+          //Stop looking through the JSON
+          break;
+          
+        }
+      }   
+    }
+
+    //Bind data and create one path per GeoJSON feature
+    map.append("g")
+        .attr("id", "states")
+        .selectAll("path")
+        .data(geoJson.features)
+        .enter()
+        .append("path")
+        .attr("d", path)
+        .on("mouseover", mousehover)
+        .on("mouseout", mouseout)
+        .style("stroke", "black")
+        .style("stroke-width", "1")
+        .style("fill", function(d) {
+          //Get data value
+          var value = d.properties.value;
+          if (value) {
+            //If value exists…
+            return colorScale(value);
+          } else {
+            //If value is undefined…
+            return "#ccc";
+          }
+       });
+  });
 });
-
-
-
-////////// above - Jim's map 
 
 d3.selectAll(".attributeSelect").on("change", function(d,i) {
   // returns the object where the event occurred as keyword "this"
 
   if (this.value == "age") {
-      mapAttribute = 'age'
+      attribute = 'age'
       totalSize = 0; 
-      updateMapAttribute(mapAttribute);
       updateVisualization(json);
       updateBarChart(barData);
   } else if (this.value == "employment"){
-      mapAttribute = 'employment'
+      attribute = 'employment'
       totalSize = 0; 
-      updateMapAttribute(mapAttribute);
       updateVisualization(json2);
       updateBarChart(barData2);
   } else if (this.value == "work experience"){
-    mapAttribute = 'work experience'
+    attribute = 'work experience'
     totalSize = 0; 
-    updateMapAttribute(mapAttribute);
     updateVisualization(json3);
     updateBarChart(barData3);
 } 
 })
-
-
-
-//// Functions ///////
-function updateMapAttribute(filter) {
-	  if (filter === "age") {
-      console.log("age")
-      d3.csv("percent_each.csv", function(data) { //Load age data
-        disabled = data;
-        window.mapcsv = disabled;
-      });
-    } else if (filter === "employment") {
-      console.log("employment")
-      d3.csv("employment_percent.csv", function(data) { //Load age data
-        employment = data;
-        window.mapcsv = employment;
-      });
-    } else if (filter === "work experience") {
-      console.log("work experience")
-      d3.csv("work_experience_percent.csv", function(data) { //Load age data
-        experience = data;
-        window.mapcsv = experience;
-      });
-    }
-    // console.log(filter)
-    // console.log(window.mapcsv[0])
-    updateMap("Estimated Percent");
-}
 
 function updateBarChart(barData) {
   barG.selectAll('g').remove()
@@ -191,7 +199,7 @@ function updateBarChart(barData) {
 
 function createBarChart(barData) {
 
-  data = barData.slice().reverse()
+  data = barData
   keys = barData['columns']
   x0.domain(data.map(function(d) { 
     return d.Attribute; 
@@ -213,21 +221,21 @@ function createBarChart(barData) {
     .text("COMPARISON BETWEEN NON-DISABLED AND SELECTED POPULATIONS");
     
   barG.append("g")
-  .selectAll("g")
-  .data(barData)
-  .enter().append("g")
-  .attr("class","bar")
-  .attr("transform", function(d) { return "translate(" + x0(d.Attribute) + ",0)"; })
-  .selectAll("rect")
-  .data(function(d) { return keys.map(function(key) { return {key: key, value: d[key], id: d.Attribute}; }); })
-  .enter().append("rect")
-    .attr("class","barRect")
-    .attr("x", function(d) { return x1(d.key); })
-    .attr("y", function(d) { return y(d.value || 0); })
-    .attr("width", x1.bandwidth())
-    .attr("height", function(d) { 
-      return BarHeight - y(d.value) || 0; })
-    .attr("fill", function(d) { return color(d.key); });
+    .selectAll("g")
+    .data(barData)
+    .enter().append("g")
+    .attr("class","bar")
+    .attr("transform", function(d) { return "translate(" + x0(d.Attribute) + ",0)"; })
+    .selectAll("rect")
+    .data(function(d) { return keys.map(function(key) { return {key: key, value: d[key], id: d.Attribute}; }); })
+    .enter().append("rect")
+      .attr("class","barRect")
+      .attr("x", function(d) { return x1(d.key); })
+      .attr("y", function(d) { return y(d.value || 0); })
+      .attr("width", x1.bandwidth())
+      .attr("height", function(d) { 
+        return BarHeight - y(d.value) || 0; })
+      .attr("fill", function(d) { return color(d.key); });
 
   barG.append("g")
     .attr("class", "axis")
@@ -265,7 +273,13 @@ function createBarChart(barData) {
     .attr("width", 15)
     .attr("height", 15)
     .attr("fill", color)
-    .attr("stroke", color)
+    .attr("stroke", function(d) {
+      if (d != 'No disability') {
+        return "#000"
+      } else {
+        return color
+      }
+    })
     .attr("stroke-width",2)
   
   legend.append("text")
@@ -417,7 +431,8 @@ function createVisualization(json) {
         return color(sequenceArray.length >= 1 ? sequenceArray[0].data.name : null);
       })
       .style("opacity", 1)
-      .on("mouseover", mouseover);
+      .on("mouseover", mouseover)
+      .on("click", mouseclick)
 
   // Add the mouseleave handler to the bounding circle.
   d3.select("#container").on("mouseleave", mouseleave);
@@ -466,69 +481,17 @@ function updateVisualization(json) {
   totalSize = path.datum().value;
 };
 
-function updateMap(filter) {
-  col_name = filter;
-  console.log(col_name);
-  console.log(window.mapcsv[0])
-  var colorScale = d3.scaleSequential(d3.interpolateBlues)
-                        .domain(d3.extent(window.mapcsv, function(d) { 
-                                                            return +d[col_name];
-                                                            }));
-    d3.json("us-states.json", function(error, json) {
-    if (error) throw error;
-    //Merge the ag. data and GeoJSON
-    //Loop through once for each ag. data value
-    for (var i = 0; i < window.mapcsv.length; i++) {
-  
-      //Grab state name
-      var dataState = window.mapcsv[i]["Geographic area name"];
-      
-      //Grab data value, and convert from string to float
-      var dataValue = parseFloat(window.mapcsv[i][col_name]);
-      // console.log(window.mapcsv[i])
-      // console.log(dataState + ":" + window.mapcsv[i][col_name])
-      
-      //Find the corresponding state inside the GeoJSON
-      for (var j = 0; j < json.features.length; j++) {
-      
-        var jsonState = json.features[j].properties.name;
-  
-        if (dataState == jsonState) {
-      
-          //Copy the data value into the JSON
-          json.features[j].properties.value = dataValue;
-          
-          //Stop looking through the JSON
-          break;
-          
-        }
-      }   
+function mouseclick(d) {
+  newClickedArray = d.ancestors().reverse();
+  newClickedArray.shift();
 
+  newClickedArray.forEach(element => {
+    if (clickedArray.indexOf(element) != -1) {
+      clickedArray.splice(clickedArray.indexOf(element),1)
+    } else {
+      clickedArray.push(element)
     }
-    //Bind data and create one path per GeoJSON feature
-    map.append("g")
-        .attr("id", "states")
-        .selectAll("path")
-        .data(json.features)
-        .enter()
-        .append("path")
-        .attr("d", path)
-        .on("click", clicked)
-        .style("stroke", "black")
-        .style("stroke-width", "1")
-        .style("fill", function(d) {
-          //Get data value
-          var value = d.properties.value;
-          
-          if (value) {
-            //If value exists…
-            return colorScale(value);
-          } else {
-            //If value is undefined…
-            return "#ccc";
-          }
-       });
-  });
+  })
 }
 
 // Fade all but the current sequence, and show it in the breadcrumb trail.
@@ -543,71 +506,104 @@ function mouseover(d) {
   d3.select("#percentage")
       .text(percentageString);
 
-  d3.select("#explanation");
+  d3.select("#explanation")
+      .style("visibility", "");
 
-  var sequenceArray = d.ancestors().reverse();
-  sequenceArray.shift(); // remove root node from the array
-  updateBreadcrumbs(sequenceArray, percentageString);
-
-  // Fade all the segments.
-  d3.selectAll("path")
-      .style("opacity", 0.3);
-
-  // Then highlight only those that are an ancestor of the current segment.
-  vis.selectAll("path")
-      .filter(function(node) {
-                return (sequenceArray.indexOf(node) >= 0);
-              })
-      .style("opacity", 1);
-
-  // Fade all the bar Rectangles.
-  d3.selectAll('.barRect')
-      .style("opacity", 0.3)
-
-  // Then highlight only those that are of the current segment.
-  barChartSvg.selectAll(".barRect")
-      .filter(function(d) {
-          if (sequenceArray.length == 1) {
-            return sequenceArray[0].data.name == d.key
-          } else {
-            var arraylength = sequenceArray.length
-            return sequenceArray[0].data.name == d.key && sequenceArray[arraylength - 1].data.name == d.id
-          }
-        })
-      .style("opacity", 1);
-
-  // sequenceArray.forEach(function(item, index) {
-  //   console.log(item.data.name)
-  // });
-
-  if (mapAttribute === "age") {
+  if (clickedArray.length == 0) {
+    var sequenceArray = d.ancestors().reverse();
+    sequenceArray.shift(); // remove root node from the array
+    updateBreadcrumbs(sequenceArray, percentageString);
+  
+    // Fade all the segments.
+    d3.selectAll("path")
+        .style("opacity", 0.3);
+  
+    // Then highlight only those that are an ancestor of the current segment.
+    vis.selectAll("path")
+        .filter(function(node) {
+                  return (sequenceArray.indexOf(node) >= 0);
+                })
+        .style("opacity", 1);
+  
+    // Fade all the bar Rectangles.
+    d3.selectAll('.barRect')
+        .style("opacity", 0.3)
+  
+    // Then highlight only those that are of the current segment.
+    barChartSvg.selectAll(".barRect")
+        .filter(function(d) {
+            if (sequenceArray.length == 1) {
+              return sequenceArray[0].data.name == d.key
+            } else if (sequenceArray.length == 2 && sequenceArray[1].children) {
+              isHighlighted = false
+              if (sequenceArray[1].children.length > 0) {
+                sequenceArray[1].children.forEach(element => {
+                  if (element.data.name == d.id) isHighlighted = true
+                })
+              }
+              return sequenceArray[0].data.name == d.key && isHighlighted
+            } else {
+              var arraylength = sequenceArray.length
+              return sequenceArray[0].data.name == d.key && sequenceArray[arraylength - 1].data.name == d.id
+            }
+          })
+        .style("opacity", 1);
+  
     if (sequenceArray.length == 1) {
       updateMap(sequenceArray[0].data.name)
     } else {
-      updateMap(sequenceArray[0].data.name + " " + sequenceArray[sequenceArray.length - 1].data.name.replace("Population ", ""))
+      updateMap(sequenceArray[0].data.name + sequenceArray[sequenceArray.length - 1].data.name.replace("Population", ""))
     }
-  } else if (mapAttribute === "employment") {
-    if (sequenceArray.length == 1) {
-      updateMap(sequenceArray[0].data.name)
-    } else {
-      var colString = ""
-      sequenceArray.forEach(function(item, index) {
-        if (index === 0) {
-          colString += item.data.name
-        } else {
-          colString = colString + " " + item.data.name
-        }
-      })
-      updateMap(colString)
-    }
-  } else if (mapAttribute === "work experience")
-  {
-    if (sequenceArray.length == 1) {
-      updateMap(sequenceArray[0].data.name)
-    } else {
-      updateMap(sequenceArray[0].data.name + " " + sequenceArray[sequenceArray.length - 1].data.name.replace(", year round", ""))
-    }
+
   }
+}
+
+function updateMap(filter) {
+  col_name = filter;
+  colorScale = d3.scaleSequential(d3.interpolateBlues)
+                        .domain(d3.extent(disabled, function(d) { return +d[col_name];}));
+    //Merge the ag. data and GeoJSON
+    //Loop through once for each ag. data value
+    geoJson = originalJson
+    for (var i = 0; i < disabled.length; i++) {
+      //Grab state name
+      var dataState = disabled[i]["Geographic area name"];
+      //Grab data value, and convert from string to float
+      var dataValue = parseFloat(disabled[i][col_name]);
+      //Find the corresponding state inside the GeoJSON
+      for (var j = 0; j < geoJson.features.length; j++) {
+        var jsonState = geoJson.features[j].properties.name;
+        if (dataState == jsonState) {
+          //Copy the data value into the JSON
+          geoJson.features[j].properties.value = dataValue;
+          //Stop looking through the JSON
+          break;
+        }
+      }
+    }
+    //Bind data and create one path per GeoJSON feature
+    map.append("g")
+        .attr("id", "states")
+        .selectAll("path")
+        .data(geoJson.features)
+        .enter()
+        .append("path")
+        .attr("d", path)
+        .on("mouseover", mousehover)
+        .on("mouseout", mouseout)
+        .style("stroke", "black")
+        .style("stroke-width", "1")
+        .style("fill", function(d) {
+          //Get data value
+          var value = d.properties.value;
+          if (value) {
+            //If value exists…
+            return colorScale(value);
+          } else {
+            //If value is undefined…
+            return "#ccc";
+          }
+       });
 }
 
 // Restore everything to full opacity when moving off the visualization.
@@ -617,34 +613,33 @@ function mouseleave(d) {
   d3.select("#trail")
       .style("visibility", "hidden");
 
-  // Deactivate all segments during transition.
-  d3.selectAll("path").on("mouseover", null);
-
-  // Transition each segment to full opacity and then reactivate it.
-  d3.selectAll("path")
+  if (clickedArray.length == 0) {
+    // Deactivate all segments during transition.
+    d3.selectAll("path").on("mouseover", null);
+  
+    // Transition each segment to full opacity and then reactivate it.
+    d3.selectAll("path")
+        .transition()
+        .duration(1000)
+        .style("opacity", function() {
+          if (d3.select(this).attr("state") != 'disabled') { return 1 } else { return 0.3 }
+        })
+        .on("end", function() {
+                if (d3.select(this).attr("state") != 'disabled') {
+                  d3.select(this).on("mouseover", mouseover);
+                }
+              });
+    
+    d3.selectAll('.barRect')
       .transition()
       .duration(1000)
-      .style("opacity", function() {
-        if (d3.select(this).attr("state") != 'disabled') {
-          return 1
-        } else {
-          return 0.3
-        }
-      })
-      .on("end", function() {
-              if (d3.select(this).attr("state") != 'disabled') {
-                d3.select(this).on("mouseover", mouseover);
-              }
-            });
+      .style("opacity", 1)
   
-  d3.selectAll('.barRect')
-    .transition()
-    .duration(1000)
-    .style("opacity", 1)
-
-//  d3.select("#explanation"    .style("visibility", "hidden");
-
-  updateMap("Estimated Percent")
+    d3.select("#explanation")
+        .style("visibility", "hidden");
+  
+    updateMap("Estimated Percent")
+  }
 }
 
 function initializeBreadcrumbTrail() {
@@ -716,6 +711,54 @@ function updateBreadcrumbs(nodeArray, percentageString) {
   // Make the breadcrumb trail visible, if it's hidden.
   d3.select("#trail")
       .style("visibility", "");
+}
+
+function mouseout(d) {
+  div.transition()
+      .duration(500)
+      .style("opacity", 0)
+}
+
+// click interaction
+function mousehover(d) {
+  var x, y, k;
+
+  if (d && centered !== d) {
+    var centroid = path.centroid(d);
+    x = centroid[0];
+    y = centroid[1];
+    k = 4;
+    centered = d;
+    // show tooltip
+    div.transition()
+      .duration(500)
+      .style("opacity", 0.99)
+    // tooltip location
+    div.html("<strong>" + d.properties.name + "</strong>" + "<br/>" + 
+              "<strong>" + "Estimate Percent with a disability: " + '<strong id="percent"></strong>')
+        
+    // tooltip data
+      d3.csv("Disabled.csv", function(data) {
+        var state = d.properties.name;
+        var matchFound = false;
+        for(var i=0;i<data.length;i++) {
+            if (data[i]["Geographic Area Name"]==state) {
+                $("#percent").html(data[i][["Estimate Percent with a disability Total civilian noninstitutionalized population"]] + "%");
+                matchFound = true;
+            }
+        }
+        if (!matchFound) {
+            $("#percent").html("No data available");
+        }
+    });
+  } else {
+    console.log("Original:centered function");
+    x = width / 2;
+    y = height / 2;
+    k = 1;
+    centered = null;
+    $(".tooltip").css('opacity', 0);
+  }
 }
 
 // Construct data structure needed for bar chart
@@ -809,53 +852,3 @@ function buildHierarchy(csv) {
   }
   return root;
 };
-// click interaction
-function clicked(d) {
-  var x, y, k;
-
-  console.log("path centroid", path.centroid(d));
-
-  if (d && centered !== d) {
-    console.log("Change");
-    var centroid = path.centroid(d);
-    x = centroid[0];
-    y = centroid[1];
-    k = 4;
-    centered = d;
-    // show tooltip
-    div.transition().duration(500).style("opacity", .99);
-    // tooltip location
-    div.html("<strong>" + d.properties.name + "</strong>" + "<br/>" + 
-              "<strong>" + "Estimate Percent with a disability: " + '<strong id="percent"></strong>')
-        .style("right", (d3.mouse(this)[0]) + "px")   
-        .style("top", (d3.mouse(this)[1]) + "px");
-    // tooltip data
-      d3.csv("Disabled.csv").then(function(data) {
-        var state = d.properties.name;
-        var matchFound = false;
-        for(var i=0;i<data.length;i++) {
-            if (data[i]["Geographic Area Name"]==state) {
-                $("#percent").html(data[i][["Estimate Percent with a disability Total civilian noninstitutionalized population"]] + "%");
-                matchFound = true;
-            }
-        }
-        if (!matchFound) {
-            $("#percent").html("No data available");
-        }
-    });
-  } else {
-    console.log("Original:centered function");
-    x = width / 2;
-    y = height / 2;
-    k = 1;
-    centered = null;
-    $(".tooltip").css('opacity', 0);
-  }
-  map.selectAll("path")
-      .classed("active", centered && function(d) { return d === centered; });
-
-  map.transition()
-      .duration(750)
-      .attr("transform", "translate(" + width/2 + "," + height / 2 + ")scale(" + k + ")translate(" + -x + "," + -y + ")")
-      .style("stroke-width", 1.5 / k + "px");
-}
