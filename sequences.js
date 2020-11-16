@@ -609,10 +609,6 @@ function mouseover(d) {
           })
         .style("opacity", 1);
 
-  // sequenceArray.forEach(function(item, index) {
-  //   console.log(item.data.name)
-  // });
-
   if (mapAttribute === "age") {
     if (sequenceArray.length == 1) {
       last_piece = sequenceArray[0].data.name;
@@ -649,11 +645,11 @@ function mouseover(d) {
 // Restore everything to full opacity when moving off the visualization.
 function mouseleave(d) {
 
+  if (clickedArray.length == 0) {
+    
   // Hide the breadcrumb trail
   d3.select("#trail")
-      .style("visibility", "hidden");
-
-  if (clickedArray.length == 0) {
+  .style("visibility", "hidden");
 
   // Deactivate all segments during transition.
   d3.selectAll("path").on("mouseover", null);
