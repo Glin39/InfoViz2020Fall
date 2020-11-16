@@ -471,16 +471,21 @@ function updateVisualization(json) {
 };
 
 function mouseclick(d) {
-  newClickedArray = d.ancestors().reverse();
-  newClickedArray.shift();
 
-  newClickedArray.forEach(element => {
-    if (clickedArray.indexOf(element) != -1) {
-      clickedArray.splice(clickedArray.indexOf(element),1)
-    } else {
-      clickedArray.push(element)
-    }
-  })
+  if (clickedArray.length == 0) {
+    newClickedArray = d.ancestors().reverse();
+    newClickedArray.shift();
+  
+    newClickedArray.forEach(element => {
+      if (clickedArray.indexOf(element) != -1) {
+        clickedArray.splice(clickedArray.indexOf(element),1)
+      } else {
+        clickedArray.push(element)
+      }
+    })
+  } else {
+    clickedArray = []
+  }
 }
 
 
