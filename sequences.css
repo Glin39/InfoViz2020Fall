@@ -82,16 +82,20 @@ body {
   margin-left: 267px;
 }
 
+#tip {
+  position: absolute;
+  text-align: center;
+  top:730px;
+  margin-left: 200px;
+  font-size: medium;
+}
+
+
 select {
   font-size: 24px;
   padding: 5px;
   text-align-last: center;
 }
-/*Jim's Setup*/
-/* On mouse hover, lighten state color */
-/*path:hover {
-  fill-opacity: .8;
-}*/
 
 div.tooltip { 
     position: absolute;     

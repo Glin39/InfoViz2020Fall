@@ -9,16 +9,6 @@ var b = {
 };
 var last_piece;
 
-// Mapping of step names to colors.
-// var colors = {
-//   "home": "#5687d1",
-//   "product": "#7b615c",
-//   "search": "#de783b",
-//   "account": "#6ab975",
-//   "other": "#a173d1",
-//   "end": "#bbbbbb"
-// };
-
 var color = d3.scaleOrdinal(d3.schemeCategory20);
 //var color = d3.scaleOrdinal(d3.schemeCategory10);
 //change array for colors
@@ -138,18 +128,21 @@ d3.selectAll(".attributeSelect").on("change", function(d,i) {
   if (this.value == "age") {
       mapAttribute = 'age'
       totalSize = 0; 
+      clickedArray = []
       updateMapAttribute(mapAttribute);
       updateVisualization(json);
       updateBarChart(barData);
   } else if (this.value == "employment"){
       mapAttribute = 'employment'
       totalSize = 0; 
+      clickedArray = []
       updateMapAttribute(mapAttribute);
       updateVisualization(json2);
       updateBarChart(barData2);
   } else if (this.value == "work experience"){
     mapAttribute = 'work experience'
     totalSize = 0; 
+    clickedArray = []
     updateMapAttribute(mapAttribute);
     updateVisualization(json3);
     updateBarChart(barData3);
@@ -157,27 +150,7 @@ d3.selectAll(".attributeSelect").on("change", function(d,i) {
 })
 
 //// Functions ///////
-// function updateTooltip(filter) {
-//   if (filter === "age") {
-//        console.log("age")
-//         d3.csv("percent_each.csv", function(data) { //Load age data
-//           disabled = data;
-//           window.tooltip = disabled;
-//        });
-//     } else if (filter === "employment") {
-//        console.log("employment")
-//         d3.csv("employment_percent.csv", function(data) { //Load age data
-//           employment = data;
-//           window.tooltip = employment;
-//         });
-//      } else if (filter === "work experience") {
-//        console.log("work experience")
-//         d3.csv("work_experience_percent.csv", function(data) { //Load age data
-//           experience = data;
-//           window.tooltip = experience;
-//         });
-//      } 
-// }
+
 function updateMapAttribute(filter) {
     if (filter === "age") {
       console.log("age")
@@ -489,7 +462,8 @@ function updateVisualization(json) {
         return color(sequenceArray.length >= 1 ? sequenceArray[0].data.name : null);
       })
       .style("opacity", 1)
-      .on("mouseover", mouseover);
+      .on("mouseover", mouseover)
+      .on("click", mouseclick)
 
   // Add the mouseleave handler to the bounding circle.
   d3.select("#container").on("mouseleave", mouseleave);
@@ -913,11 +887,4 @@ function mousehover(d) {
     centered = null;
     $(".tooltip").css('opacity', 0);
   }
-  // map.selectAll("path")
-  //     .classed("active", centered && function(d) { return d === centered; });
-
-  // map.transition()
-  //     .duration(750)
-  //     .attr("transform", "translate(" + width/2 + "," + height / 2 + ")scale(" + k + ")translate(" + -x + "," + -y + ")")
-  //     .style("stroke-width", 1.5 / k + "px");
 }
