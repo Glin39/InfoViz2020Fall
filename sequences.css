@@ -74,3 +74,32 @@ select {
   padding: 5px;
   text-align-last: center;
 }
+
+#map {
+  position: absolute;
+  top: 200px;
+  left: 250px;
+  width: 250px;
+  height: 200px;
+  border: none;
+}
+
+/* #usamap {
+  position: absolute;
+  width: 250px;
+  height: 200px;
+  border: none;
+} */
+
+div.tooltip { 
+  position: absolute;     
+  text-align: center;     
+  width: auto;          
+  height: auto;         
+  padding: 2px;       
+  font: 12px sans-serif;    
+  background: #D3D3D3; 
+  border: 0px;    
+  border-radius: 12px;     
+  pointer-events: none;     
+}
