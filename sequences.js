@@ -128,6 +128,10 @@ d3.csv("percent_each.csv", function(data) { //Load age data
   updateMap("Estimated Percent")
 });
 
+ d3.csv("Disabled.csv", function(data) {
+  window.tooltip = data;
+});
+
 
 d3.selectAll(".attributeSelect").on("change", function(d,i) {
   // returns the object where the event occurred as keyword "this"
@@ -154,6 +158,27 @@ d3.selectAll(".attributeSelect").on("change", function(d,i) {
 })
 
 //// Functions ///////
+function updateTooltip(filter) {
+  // if (filter === "age") {
+  //     console.log("age")
+  //     d3.csv("percent_each.csv", function(data) { //Load age data
+  //       disabled = data;
+  //       window.mapcsv = disabled;
+  //     });
+  //   } else if (filter === "employment") {
+  //     console.log("employment")
+  //     d3.csv("employment_percent.csv", function(data) { //Load age data
+  //       employment = data;
+  //       window.mapcsv = employment;
+  //     });
+  //   } else if (filter === "work experience") {
+  //     console.log("work experience")
+  //     d3.csv("work_experience_percent.csv", function(data) { //Load age data
+  //       experience = data;
+  //       window.mapcsv = experience;
+  //     });
+  //   }
+}
 function updateMapAttribute(filter) {
     if (filter === "age") {
       console.log("age")
@@ -474,97 +499,10 @@ function mouseclick(d) {
   })
 }
 
-// Fade all but the current sequence, and show it in the breadcrumb trail.
-function mouseover(d) {
-
-  var percentage = (100 * d.value / totalSize).toPrecision(3);
-  var percentageString = percentage + "%";
-  if (percentage < 0.1) {
-    percentageString = "< 0.1%";
-  }
-
-  d3.select("#percentage")
-      .text(percentageString);
-
-  d3.select("#explanation")
-      .style("visibility", "");
-
-  if (clickedArray.length == 0) {
-    var sequenceArray = d.ancestors().reverse();
-    sequenceArray.shift(); // remove root node from the array
-    updateBreadcrumbs(sequenceArray, percentageString);
-  
-    // Fade all the segments.
-    d3.selectAll("path")
-        .style("opacity", 0.3);
-  
-    // Then highlight only those that are an ancestor of the current segment.
-    vis.selectAll("path")
-        .filter(function(node) {
-                  return (sequenceArray.indexOf(node) >= 0);
-                })
-        .style("opacity", 1);
-  
-    // Fade all the bar Rectangles.
-    d3.selectAll('.barRect')
-        .style("opacity", 0.3)
-  
-    // Then highlight only those that are of the current segment.
-    barChartSvg.selectAll(".barRect")
-        .filter(function(d) {
-            if (sequenceArray.length == 1) {
-              return sequenceArray[0].data.name == d.key
-            } else if (sequenceArray.length == 2 && sequenceArray[1].children) {
-              isHighlighted = false
-              if (sequenceArray[1].children.length > 0) {
-                sequenceArray[1].children.forEach(element => {
-                  if (element.data.name == d.id) isHighlighted = true
-                })
-              }
-              return sequenceArray[0].data.name == d.key && isHighlighted
-            } else {
-              var arraylength = sequenceArray.length
-              return sequenceArray[0].data.name == d.key && sequenceArray[arraylength - 1].data.name == d.id
-            }
-          })
-        .style("opacity", 1);
-  
-    if (mapAttribute === "age") {
-    if (sequenceArray.length == 1) {
-      updateMap(sequenceArray[0].data.name)
-    } else {
-      updateMap(sequenceArray[0].data.name + " " + sequenceArray[sequenceArray.length - 1].data.name.replace("Population ", ""))
-    }
-  } else if (mapAttribute === "employment") {
-    if (sequenceArray.length == 1) {
-      updateMap(sequenceArray[0].data.name)
-    } else {
-      var colString = ""
-      sequenceArray.forEach(function(item, index) {
-        if (index === 0) {
-          colString += item.data.name
-        } else {
-          colString = colString + " " + item.data.name
-        }
-      })
-      updateMap(colString)
-    }
-  } else if (mapAttribute === "work experience")
-  {
-    if (sequenceArray.length == 1) {
-      updateMap(sequenceArray[0].data.name)
-    } else {
-      updateMap(sequenceArray[0].data.name + " " + sequenceArray[sequenceArray.length - 1].data.name.replace(", year round", ""))
-    }
-  }
-
-  }
-}
 
 function updateMap(filter) {
   col_name = filter;
   console.log(col_name);
-  console.log(window.mapcsv[0])
   var colorScale = d3.scaleSequential(d3.interpolateBlues)
                         .domain(d3.extent(window.mapcsv, function(d) { 
                                                             return +d[col_name];
@@ -608,6 +546,8 @@ function updateMap(filter) {
         .enter()
         .append("path")
         .attr("d", path)
+        .on("mouseover", mousehover)
+        .on("mouseout", mouseout)
         .style("stroke", "black")
         .style("stroke-width", "1")
         .style("fill", function(d) {
@@ -625,6 +565,12 @@ function updateMap(filter) {
   });
 }
 
+function mouseout(d) {
+  div.transition()
+      .duration(500)
+      .style("opacity", 0)
+}
+
 // Fade all but the current sequence, and show it in the breadcrumb trail.
 function mouseover(d) {
 
@@ -637,8 +583,7 @@ function mouseover(d) {
   d3.select("#percentage")
       .text(percentageString);
 
-  d3.select("#explanation");
-
+  //if (clickedArray.length == 0) {
   var sequenceArray = d.ancestors().reverse();
   sequenceArray.shift(); // remove root node from the array
   updateBreadcrumbs(sequenceArray, percentageString);
@@ -660,15 +605,23 @@ function mouseover(d) {
 
   // Then highlight only those that are of the current segment.
   barChartSvg.selectAll(".barRect")
-      .filter(function(d) {
-          if (sequenceArray.length == 1) {
-            return sequenceArray[0].data.name == d.key
-          } else {
-            var arraylength = sequenceArray.length
-            return sequenceArray[0].data.name == d.key && sequenceArray[arraylength - 1].data.name == d.id
-          }
-        })
-      .style("opacity", 1);
+        .filter(function(d) {
+            if (sequenceArray.length == 1) {
+              return sequenceArray[0].data.name == d.key
+            } else if (sequenceArray.length == 2 && sequenceArray[1].children) {
+              isHighlighted = false
+              if (sequenceArray[1].children.length > 0) {
+                sequenceArray[1].children.forEach(element => {
+                  if (element.data.name == d.id) isHighlighted = true
+                })
+              }
+              return sequenceArray[0].data.name == d.key && isHighlighted
+            } else {
+              var arraylength = sequenceArray.length
+              return sequenceArray[0].data.name == d.key && sequenceArray[arraylength - 1].data.name == d.id
+            }
+          })
+        .style("opacity", 1);
 
   // sequenceArray.forEach(function(item, index) {
   //   console.log(item.data.name)
@@ -702,6 +655,7 @@ function mouseover(d) {
       updateMap(sequenceArray[0].data.name + " " + sequenceArray[sequenceArray.length - 1].data.name.replace(", year round", ""))
     }
   }
+  //}
 }
 
 // Restore everything to full opacity when moving off the visualization.
@@ -904,7 +858,7 @@ function buildHierarchy(csv) {
   return root;
 };
 // click interaction
-function clicked(d) {
+function mousehover(d) {
   var x, y, k;
 
   console.log("path centroid", path.centroid(d));
@@ -924,19 +878,19 @@ function clicked(d) {
         .style("right", (d3.mouse(this)[0]) + "px")   
         .style("top", (d3.mouse(this)[1]) + "px");
     // tooltip data
-      d3.csv("Disabled.csv").then(function(data) {
         var state = d.properties.name;
         var matchFound = false;
-        for(var i=0;i<data.length;i++) {
-            if (data[i]["Geographic Area Name"]==state) {
-                $("#percent").html(data[i][["Estimate Percent with a disability Total civilian noninstitutionalized population"]] + "%");
+        for(var i=0;i<window.tooltip.length;i++) {
+            console.log(window.tooltip[i]["Geographic Area Name"]);
+            if (window.tooltip[i]["Geographic Area Name"]==state) {
+                $("#percent").html(window.tooltip[i][["Estimate Percent with a disability Total civilian noninstitutionalized population"]] + "%");
                 matchFound = true;
             }
         }
         if (!matchFound) {
             $("#percent").html("No data available");
         }
-    });
+   
   } else {
     console.log("Original:centered function");
     x = width / 2;
@@ -948,8 +902,8 @@ function clicked(d) {
   map.selectAll("path")
       .classed("active", centered && function(d) { return d === centered; });
 
-  map.transition()
-      .duration(750)
-      .attr("transform", "translate(" + width/2 + "," + height / 2 + ")scale(" + k + ")translate(" + -x + "," + -y + ")")
-      .style("stroke-width", 1.5 / k + "px");
+  // map.transition()
+  //     .duration(750)
+  //     .attr("transform", "translate(" + width/2 + "," + height / 2 + ")scale(" + k + ")translate(" + -x + "," + -y + ")")
+  //     .style("stroke-width", 1.5 / k + "px");
 }
