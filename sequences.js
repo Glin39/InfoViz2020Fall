@@ -8,6 +8,7 @@ var b = {
   w: 215, h: 30, s: 3, t: 10
 };
 var last_piece;
+var GeoJson;
 
 var color = d3.scaleOrdinal()
   .range(["#BBC7CE","#93748A", "#9CB380", "#C8553D","#FCB97D", "#EDD892", "#588B8B"])
@@ -499,8 +500,10 @@ function updateMap(filter) {
                         .domain(d3.extent(window.mapcsv, function(d) { 
                                                             return +d[col_name];
                                                             }));
+                                                          
     d3.json("us-states.json", function(error, json) {
     if (error) throw error;
+    
     //Merge the ag. data and GeoJSON
     //Loop through once for each ag. data value
     for (var i = 0; i < window.mapcsv.length; i++) {
@@ -528,9 +531,10 @@ function updateMap(filter) {
           
         }
       }   
-
     }
+
     //Bind data and create one path per GeoJSON feature
+    map.selectAll("g").remove()
     map.append("g")
         .attr("id", "states")
         .selectAll("path")
