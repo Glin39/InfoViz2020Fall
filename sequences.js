@@ -9,8 +9,8 @@ var b = {
 };
 var last_piece;
 
-var color = d3.scaleOrdinal(d3.schemeCategory20);
-//var color = d3.scaleOrdinal(d3.schemeCategory10);
+var color = d3.scaleOrdinal()
+  .range(["#BBC7CE","#93748A", "#9CB380", "#C8553D","#FCB97D", "#EDD892", "#588B8B"])
 //change array for colors
 
 
@@ -197,11 +197,10 @@ function createBarChart(barData) {
 
   barG.append("text")
     .attr("x", BarWidth / 2)
-    .attr("y", -30)
+    .attr("y", -35)
     .attr("fill", "#000")
-    .attr("font-weight", "bold")
     .attr("text-anchor", "middle")
-    .attr("font-size", 12)
+    .attr("font-size", 17)
     .text("COMPARISON BETWEEN NON-DISABLED AND SELECTED POPULATIONS");
     
   barG.append("g")
@@ -241,23 +240,26 @@ function createBarChart(barData) {
         .style("text-anchor", "end")
         .attr("dx", "-.8em")
         .attr("dy", ".15em")
-        .attr("transform", "rotate(-65)");
+        .attr("transform", "rotate(-65)")
+        .attr("font-family", "Belleza")
+      .attr("font-size", 12);
 
   barG.append("g")
     .attr("class", "y axis")
     .call(d3.axisLeft(y).ticks(null, "s"))
   .append("text")
-    .attr("x", 2)
-    .attr("y", y(y.ticks().pop()) + 0.5)
+    .attr("x", -20)
+    .attr("y", y(y.ticks().pop()) - 14)
     .attr("dy", "0.32em")
     .attr("fill", "#000")
-    .attr("font-weight", "bold")
+    .attr("font-family", "Belleza")
+    .attr("font-size", 12)
     .attr("text-anchor", "start")
     .text("Population");
 
   legend = barG.append("g")
-    .attr("font-family", "sans-serif")
-    .attr("font-size", 10)
+    .attr("font-family", "Belleza")
+    .attr("font-size", 12)  
     .attr("text-anchor", "end")
   .selectAll("g")
   .data(keys.slice().reverse())
@@ -270,12 +272,14 @@ function createBarChart(barData) {
     .attr("height", 15)
     .attr("fill", color)
     .attr("stroke", 'black')
-    .attr("stroke-width",2)
+    .attr("stroke-width",0.5)
   
   legend.append("text")
     .attr("x", BarWidth - 24)
     .attr("y", 9.5)
     .attr("dy", "0.32em")
+    .attr("font-family", "Belleza")
+    .attr("font-size", 12)
     .text(function(d) { return d; });
   
   legend.selectAll("rect")
@@ -491,7 +495,7 @@ function mouseclick(d) {
 
 function updateMap(filter) {
   col_name = filter;
-  var colorScale = d3.scaleSequential(d3.interpolateBlues)
+  var colorScale = d3.scaleSequential(d3.interpolateRdPu)
                         .domain(d3.extent(window.mapcsv, function(d) { 
                                                             return +d[col_name];
                                                             }));
@@ -714,12 +718,15 @@ function breadcrumbPoints(d, i) {
 function updateBreadcrumbs(nodeArray, percentageString) {
 
   // Data join; key function combines name and depth (= position in sequence).
-  var trail = d3.select("#trail")
+  d3.select("#trail")
       .selectAll("g")
-      .data(nodeArray, function(d) { return d.data.name + d.depth; });
+      .remove();
+
+  var trail = d3.select("#trail")
+      .selectAll("g").data(nodeArray, function(d) { return d.data.name + d.depth; });
 
   // Remove exiting nodes.
-  trail.exit().remove();
+  // trail.exit().remove();
 
   // Add breadcrumb and label for entering nodes.
   var entering = trail.enter().append("g");

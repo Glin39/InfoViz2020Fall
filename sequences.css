@@ -1,8 +1,8 @@
 body {
-  font-family: 'Open Sans', sans-serif;
+  font-family: 'Belleza', sans-serif;
   font-size: 12px;
   font-weight: 400;
-  background-color: #fff;
+  background-color: #f8edeb;
   width: 1400px;
   height: 700px;
   margin-top: 10px;
@@ -29,12 +29,14 @@ body {
 }
 
 #sequence text, #legend text {
+  font-family: 'Belleza', sans-serif;
   font-weight: 600;
   fill: #fff;
 }
 
 #chart {
   position: absolute;
+  top: 150px;
   z-index: 0;
 }
 
@@ -66,9 +68,16 @@ body {
   height: 100px;
 }
 
+#dropdown{
+  position: absolute;
+  top: 20px;
+  left:650px;
+}
+
 #sideChart {
   position: absolute;
   float: left;
+  top:150px;
   width: 800px;
   height: 400px;
   z-index: 0;
@@ -85,16 +94,29 @@ body {
 #tip {
   position: absolute;
   text-align: center;
-  top:730px;
-  margin-left: 200px;
+  top:800px;
+  margin-left: 250px;
   font-size: medium;
 }
 
+#trail{
+  position: absolute;
+  top: 100px;
+}
 
 select {
-  font-size: 24px;
+  background-color: #fafafa;
+  font-family: 'Belleza', sans-serif;
+  font-size: 30px;
   padding: 5px;
   text-align-last: center;
+}
+
+label {
+  position: absolute;
+  top: 43px;
+  left: 450px;
+  font-size:20px;
 }
 
 div.tooltip { 
