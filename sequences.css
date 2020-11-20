@@ -8,6 +8,44 @@ body {
   margin-top: 10px;
 }
 
+.front {
+  position: absolute;
+  left: 260px;
+  width: auto;
+  height: 60px;
+}
+
+.back {
+  position: absolute;
+  left:1040px;
+  width:auto;
+  height:60px;
+}
+
+.line {
+  width: 1400px;
+  height: 85px;
+  border-bottom: 0.5px solid #ABABAB;
+  position: absolute;
+}
+
+
+.maplegend {
+  position: absolute;
+  left: 304px;
+  top: 575px;
+  width:auto;
+  height:20px;
+}
+
+.maplegnedtext {
+  position: absolute;
+  left: 350px;
+  top: 580px;
+  width:auto;
+  height:20px;
+}
+
 #main {
   float: left;
   width: 750px;
@@ -71,7 +109,7 @@ body {
 #dropdown{
   position: absolute;
   top: 20px;
-  left:650px;
+  left:720px;
 }
 
 #sideChart {
@@ -114,9 +152,9 @@ select {
 
 label {
   position: absolute;
-  top: 43px;
-  left: 450px;
-  font-size:20px;
+  top: 25px;
+  left: 410px;
+  font-size:30px;
 }
 
 div.tooltip { 
